@@ -1,0 +1,4 @@
+---
+- name: Inclui bookworm.yml
+  include_tasks: bookworm.yml
+  when: (ansible_facts['distribution_release'] == "bookworm")

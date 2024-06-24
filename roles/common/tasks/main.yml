@@ -1,0 +1,60 @@
+---
+# tasks file for serverTools
+- name: Ajustando horário dos servidores
+  timezone:
+    name: America/Recife
+
+- name: Adicionando usuário locio
+  user:
+    name: locio
+    shell: /bin/bash
+
+- name: Adicionando usuário locio ao sudo (instalar >> ansible-galaxy collection install community.general)
+  community.general.sudoers:
+    name: sudo-locio
+    user: locio
+    commands: ALL
+
+- name: Atualizando todos os pacotes instalados em base Debian
+  tags: att
+  apt:
+    update_cache: yes
+    name: "*"
+    state: latest
+  when: (ansible_facts['distribution_file_variety'] == "Debian")
+
+- name: Atualizando todos os pacotes instalados em base RedHat
+  tags: att
+  yum:
+    update_cache: yes
+    name: "*"
+    state: latest
+  when: (ansible_facts['distribution_file_variety'] == "RedHat")
+
+- name: Instalando pacotes para gerenciamento em base Debian
+  apt:
+    update_cache: yes
+    name:
+    - vim
+    - wget
+    - curl
+    - iotop
+    - htop
+    - zip
+    - jq
+    state: latest
+  when: (ansible_facts['distribution_file_variety'] == "Debian")
+
+- name: Instalando pacotes para gerenciamento em base RedHat
+  yum:
+    update_cache: yes
+    name:
+    - vim
+    - wget
+    - curl
+    - iotop
+    - htop
+    - zip
+    - jq
+    state: latest
+  when: (ansible_facts['distribution_file_variety'] == "RedHat")

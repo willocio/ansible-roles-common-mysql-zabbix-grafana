@@ -1,0 +1,52 @@
+---
+- name: Instala o repo do Zabbix - base RedHat
+  dnf:
+    name: 'https://repo.zabbix.com/zabbix/7.0/rocky/8/x86_64/zabbix-release-7.0-1.el8.noarch.rpm'
+    state: present
+    disable_gpg_check: true
+
+- name: Limpar cache repo
+  shell: dnf clean all
+
+- name: Instalar pacotes Zabbix-Agent2 - Base RedHat
+  dnf:
+    name:
+    - zabbix-agent2
+    - zabbix-agent2-plugin-*
+
+- name: Copiando zabbix_agent2.conf
+  template:
+    src: zabbix_agent2.conf
+    dest: /etc/zabbix/zabbix_agent2.conf
+  tags: teste
+
+- name: Copiando dir_raiz.sh
+  copy:
+    src: dir_raiz.sh
+    dest: /etc/zabbix/zabbix_agent2.d/dir_raiz.sh
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copiando userparameter_lld_dir_raiz.conf
+  copy:
+    src: userparameter_lld_dir_raiz.conf
+    dest: /etc/zabbix/zabbix_agent2.d/userparameter_lld_dir_raiz.conf
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Reiniciando o Agent2
+  systemd:
+    name: zabbix-agent2
+    enabled: true
+    state: restarted
+  tags: teste
+
+- name: Adicionar porta ao Firewall
+  ansible.posix.firewalld:
+    port: 10050/tcp
+    permanent: true
+    state: enabled
+    zone: public
+    immediate: true

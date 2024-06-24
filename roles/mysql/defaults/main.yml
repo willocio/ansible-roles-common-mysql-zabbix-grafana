@@ -1,0 +1,5 @@
+---
+db_name: zabbix
+db_pass_root: RooTWordpasS
+db_user: zbx_monitor
+db_pass: RotiNom

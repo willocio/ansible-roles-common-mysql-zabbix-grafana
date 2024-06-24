@@ -1,0 +1,118 @@
+---
+- name: Atualizar repositório
+  apt:
+    update_cache: yes
+
+- name: Instalando MySQL
+  apt:
+    name:
+      - mysql-server
+      - python3-pymysql
+      - python3-pip
+
+- name: Instala o repo do Zabbix - base Debian
+  apt:
+    deb: https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_7.0-1+ubuntu22.04_all.deb
+    update_cache: yes
+
+- name: Instalar pacotes Zabbix - Base Debian
+  apt:
+    name:
+    - zabbix-server-mysql
+    - zabbix-frontend-php
+    - zabbix-nginx-conf
+    - zabbix-sql-scripts
+    - zabbix-agent
+
+- name: Configurando senha do root
+  mysql_user:
+    name: root
+    password: "{{ db_pass_root }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    host: localhost
+    login_user: root
+    login_password: ''
+    state: present
+  ignore_errors: true
+
+- name: Copiando my.cnf
+  copy:
+    src: my.cnf
+    dest: /root/.my.cnf
+    owner: vagrant
+    group: vagrant
+    mode: '0644'
+
+- name: Criar databases zabbix - Base Debian
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    state: present
+    encoding: utf8mb4
+    collation: utf8mb4_bin
+    login_unix_socket: /run/mysqld/mysqld.sock
+
+- name: Remove todas as contas anônimas
+  community.mysql.mysql_user:
+    name: ''
+    host_all: true
+    state: absent
+
+- name: Criando usuário e senha e concedendo privilégios para o database com 'WITH GRANT OPTION'
+  community.mysql.mysql_user:
+    state: present
+    name: "{{ db_user }}"
+    password: "{{ db_pass }}"
+    priv: '{{ db_name }}.*:ALL,GRANT'
+  tags: teste
+
+- name: Set log_bin_trust_function_creators variable to 1 persistently
+  community.mysql.mysql_variables:
+    variable: log_bin_trust_function_creators
+    value: "1"
+    mode: persist
+
+- name: >
+    Importa server.sql.gz com codificação utf8mb4,
+    similar a zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | mysql --default-character-set=utf8mb4 -uzabbix -p zabbix
+  community.mysql.mysql_db:
+    state: import
+    name: zabbix
+    encoding: utf8mb4
+    target: /usr/share/zabbix-sql-scripts/mysql/server.sql.gz
+
+- name: Set log_bin_trust_function_creators variable to 1 persistently
+  community.mysql.mysql_variables:
+    variable: log_bin_trust_function_creators
+    value: "0"
+    mode: persist
+
+- name: Copiando zabbix_server.conf
+  template:
+    src: zabbix_server.conf
+    dest: /etc/zabbix/zabbix_server.conf
+
+- name: Copiando zabbix_agentd.conf
+  template:
+    src: zabbix_agentd.conf
+    dest: /etc/zabbix/zabbix_agentd.conf
+
+- name: Copiando nginx.conf
+  template:
+    src: nginx.conf
+    dest: /etc/zabbix/nginx.conf
+
+- name: Excluindo default em /etc/nginx/sites-enabled/default (Evitar conflito com o Front do Zabbix)
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Reiniciando os serviços
+  systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: restarted
+  loop:
+    - zabbix-server
+    - zabbix-agent
+    - nginx
+    - php8.1-fpm

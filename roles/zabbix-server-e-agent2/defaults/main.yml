@@ -1,0 +1,5 @@
+---
+db_name: zabbix
+db_pass_root: RooTWordpasS
+db_user: zabbix
+db_pass: WordPAss

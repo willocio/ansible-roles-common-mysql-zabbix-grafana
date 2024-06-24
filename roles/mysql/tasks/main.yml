@@ -1,0 +1,38 @@
+---
+- name: Instalar mySQL-server
+  yum:
+    name: mysql-server
+    state: present
+  when: (ansible_facts['distribution_file_variety'] == "RedHat")
+
+- name: Start service mysqld, if not started
+  ansible.builtin.service:
+    name: mysqld
+    state: started
+    enabled: yes
+  when: (ansible_facts['distribution_file_variety'] == "RedHat")
+
+- name: Instalar pymysql
+  pip:
+    name: pymysql
+    executable: pip3
+  when: (ansible_facts['distribution_file_variety'] == "RedHat")
+
+- name: Criando usuário com privilégios REPLICATION CLIENT,PROCESS,SHOW DATABASES,SHOW VIEW,GRANT
+  mysql_user:
+    state: present
+    name: "{{ db_user }}"
+    password: "{{ db_pass }}"
+    host: "%"
+    priv: '*.*:REPLICATION CLIENT,PROCESS,SHOW DATABASES,SHOW VIEW,GRANT'
+  when: (ansible_facts['distribution_file_variety'] == "RedHat")
+
+- name: Adicionar porta ao Firewall
+  ansible.posix.firewalld:
+    port: 3306/tcp
+    permanent: true
+    state: enabled
+    zone: public
+    immediate: true
+  when: (ansible_facts['distribution_file_variety'] == "RedHat")
+  tags: zabbix

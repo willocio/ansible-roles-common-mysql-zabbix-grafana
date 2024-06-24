@@ -1,0 +1,25 @@
+---
+- name: Instala o repo do Zabbix - Debian
+  apt:
+    deb: 'https://repo.zabbix.com/zabbix/7.0/debian/pool/main/z/zabbix-release/zabbix-release_7.0-1+debian12_all.deb'
+
+- name: Atualiza cache do repositório
+  apt:
+    update_cache: true
+
+- name: Instalar pacotes Zabbix-Agent2 - Debian
+  apt:
+    name:
+    - zabbix-agent2
+    - zabbix-agent2-plugin-*
+
+- name: Copiando zabbix_agent2.conf
+  template:
+    src: zabbix_agent2.conf
+    dest: /etc/zabbix/zabbix_agent2.conf
+
+- name: Reiniciando o Agent2
+  systemd:
+    name: zabbix-agent2
+    enabled: true
+    state: restarted

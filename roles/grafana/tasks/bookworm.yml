@@ -1,0 +1,35 @@
+---
+- name: Instalar pré-requisitos
+  apt:
+    name:
+    - apt-transport-https
+    - software-properties-common
+    - wget
+    state: present
+    update_cache: yes
+
+- name: Importar chave GPG
+  apt_key:
+    url: https://apt.grafana.com/gpg.key
+    keyring: /etc/apt/keyrings/grafana.gpg
+
+- name: Adicionar repositório Grafana ao Sources.list
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main"
+    state: present
+    filename: grafana.list
+
+- name: Atualizar cache do repositório
+  apt:
+    update_cache: yes
+
+- name: Instalando Grafana
+  apt:
+    name: grafana
+    state: present
+
+- name: Iniciando grafana
+  systemd:
+    name: grafana-server
+    state: started
+    enabled: true

@@ -1,0 +1,16 @@
+---
+- name: Inclui ubuntu.yml
+  include_tasks: ubuntu.yml
+  when: (ansible_facts['distribution'] == "Ubuntu")
+  tags: teste
+
+- name: Inclui rock.yml
+  include_tasks: rock.yml
+  when: (ansible_facts['distribution'] == "Rock")
+  tags: 
+  - teste
+  - att
+
+- name: Inclui debian.yml
+  include_tasks: debian.yml
+  when: (ansible_facts['distribution'] == "Debian")
